@@ -73,3 +73,4 @@ int __fastcall do_encode(__int64 ptr)
   return (*(__int64 (__fastcall **)(char *, size_t))(ptr + 32))(v2, len);// call shell
 }
 ```
+## 
