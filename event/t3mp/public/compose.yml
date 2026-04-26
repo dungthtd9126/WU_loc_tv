@@ -1,0 +1,7 @@
+services:
+  dist_newjean:
+    build: .
+    ports:
+      - "1338:1338"
+    privileged: false
+    restart: unless-stopped

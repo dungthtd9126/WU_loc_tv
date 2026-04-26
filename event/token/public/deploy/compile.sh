@@ -1,0 +1,1 @@
+gcc main.c vector.c token.c -o chall -Wall

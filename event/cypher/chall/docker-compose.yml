@@ -1,0 +1,7 @@
+services:
+  cipherbox:
+    build:
+      context: .
+      network: host
+    network_mode: host
+    restart: unless-stopped
