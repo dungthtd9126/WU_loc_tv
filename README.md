@@ -32,8 +32,8 @@ int __fastcall main(int argc, const char **argv, const char **envp)
         do_set((__int64)name);                  // oob write
 ...
 ```
-- Bài này có bug khá rõ là oob ở do_set dẫn đến ghi đè function ptr. Em sẽ ghi đè exe.plt.system vào func_ptr_1 để có thể thực hiện system call
-- Trước đó em sẽ set up chuỗi 'sh' bằng hàm do_set nhờ vào bug oob
+Bài này có bug khá rõ là oob ở do_set dẫn đến ghi đè function ptr. Em sẽ ghi đè exe.plt.system vào func_ptr_1 để có thể thực hiện system call
+Trước đó em sẽ set up chuỗi 'sh' bằng hàm do_set nhờ vào bug oob
 ```
 int __fastcall do_set(__int64 ptr)
 {
@@ -50,8 +50,9 @@ int __fastcall do_set(__int64 ptr)
   return puts("  [+] Updated");
 }
 ```
-- Tiếp theo, gọi do_encode sao cho chương trình lấy đúng chuỗi 'sh' mà em đã thiết lập trước đó rồi gọi system mà em đã set up trước đó.
-- Hàm này khá đặt biệt là nó sử dụng input của em như idx để lấy dữ liệu từ stack.
+Tiếp theo, gọi do_encode sao cho chương trình lấy đúng chuỗi 'sh' mà em đã thiết lập trước đó rồi gọi system mà em đã set up trước đó.
+
+Hàm này khá đặt biệt là nó sử dụng input của em như idx để lấy dữ liệu từ stack.
 ```
 int __fastcall do_encode(__int64 ptr)
 {
@@ -74,5 +75,112 @@ int __fastcall do_encode(__int64 ptr)
 }
 ```
 ## Store
-- Bài này thì khá là khó ở chỗ code dài nên em bị đánh tâm lý khúc này. Challenge này có 1 bug chính, OOB write dẫn đến arbitrary read and write theo cách của em
-- 
+Bài này thì khá là khó ở chỗ code dài nên em bị đánh tâm lý khúc này. Challenge này có 1 bug chính, OOB write dẫn đến arbitrary read and write theo cách của em
+
+Program bị lỗi khá nặng ở hàm best seller, nó lấy giá trị purchse_count của product như là 1 IDX. Mà em có thể điều khiển đc nó dẫn đến điều khiển 
+được nơi program trích xuất từ count trong vùng heap
+
+Nhờ đó em sẽ oob tới vùng feedback mà em đã nhập trước đó để count[val] lấy giá trị từ đó thành IDX thứ 2
+
+```
+...
+for (int i = n - 1; i >= 0; i--)
+    {
+        if (products[i]) // product exist
+        {
+            int val = products[i]->purchase_count;
+            int pos = count[val] - 1;
+            output[pos] = products[i];
+            count[val]--;
+        }
+    }
+...
+```
+Nhờ vào việc điều khiển đc cả val và pos thì em đã điều khiển đc nơi mà products[i] sẽ đc store. Chính là ngay vùng len và con trỏ tới feedback của em
+
+<img width="1040" height="978" alt="image" src="https://github.com/user-attachments/assets/103b76ed-d57a-4234-8b9d-9b402d18aab3" />
+
+Kế tiếp là tính toán offset để mà oob, vì chương trình sử dụng hàm rand để random purchase_count của từng trái cây nên em sẽ sử dụng rand luôn để dự đoán các giá trị kế tiếp của chương trình. Điều này diễn ra là vì tính chất hàm rand nếu có cùng mốc thời gian thì sẽ có 1 quy luật đưa ra các số cụ thể, nó ko hẳn là ko thể dự đoán.
+
+Em phải làm tới mức này là vì em cần điều khiển val sao cho chính xác nhất có thể thì mới kiểm soát hoàn toàn được IDX ở các bước kế tiếp
+
+Lưu ý là cx phải checkout liên tục tại vì em ko thể nhập số lớn quá 0x7fffffff, vì em có thể mua liên tục và khi checkout, chương trình cộng dồn
+số lượng của em với purchase_count mà ko hề check dẫn đến em có thể bypass việc chương trình chặn nhập số âm
+
+- Code bypass:
+```
+...
+add(9, (0x7fffffff-cnt[9]))
+checkout()
+add(9, 0x7fffffff-2)
+checkout()
+...
+```
+Đồng thời, em cũng cần val < 0 tại vì chương trình có khúc lấy purchase_count lớn nhất rồi malloc sao cho lớn hơn gấp 4 lần con số đó. Vì v em sẽ làm nó âm để nó trích xuất lùi về sau 
+```
+...
+int max_val = 0;
+    int n = 10;
+
+    for (int i = 0; i < n; i++)
+    {
+        // products[i]->purchase_count > 0x7f --> products[i]->purchase_count < 0 ==> max_val not count on
+        if (products[i] && products[i]->purchase_count > max_val)
+        {
+            max_val = products[i]->purchase_count;
+        }
+    }
+
+    int size_needed = (max_val + 1) * sizeof(int);
+    int *count = (int *)malloc(size_needed);
+...
+```
+Và cũng vì malloc size thay đổi liên tục vì max_val chính là giá trị mà rand generate tại 1 mốc thời gian random nên em sẽ phải code 1 tí thuật toán để tìm ra chunk_size thực sự (tính cả meta data) đc sử dụng
+```
+...
+def get_actual_chunk_size(request_size):
+    request_size = (request_size+1)*4
+    total = request_size + 8
+    
+    if total < 32:
+        return 32
+    
+    actual_size = (total + 15) & ~15
+    
+    return actual_size
+max = 0
+for i in range(10):
+    info(f'value {i}: {hex(cnt[i])}')
+    if (cnt[i] > max):
+        max = cnt[i]
+
+chunk_size = get_actual_chunk_size(max)
+...
+```
+Lý do đương nhiên cũng là vì độ chính xác của IDX mà em đã control, em muốn nó thực sự trích xuất IDX thứ 2 từ feedback của em
+
+<img width="1317" height="997" alt="image" src="https://github.com/user-attachments/assets/3580121d-2887-4919-b534-1271cd593e4a" />
+
+Vùng vàng là nơi chứa len và ptr của feedback, hiện tại code của em đã overwrite len của feedback ở <b> 0x55555555c2a0 </b>
+
+Vùng xanh lá là vùng nhập feedback
+
+Vùng xanh dương chứa các IDX default của program
+
+Vùng vàng là nơi chứa các products[i] mà đáng lẽ chương trình phải ghi tại đó.
+
+Vì em phải vượt qua vùng malloc có size thay đổi liên tục đó nên em phải tìm ra chunk_size dựa vào code ở trên mà tính offset trừ cho hợp lệ
+
+Đến đây thì em chỉ cần overwrite len và feedback ptr của em thành products[i] là đc.
+
+<img width="1266" height="924" alt="image" src="https://github.com/user-attachments/assets/00ed388a-99e3-4573-a04d-7b75e060fb02" />
+
+Vì đã có len cực kì lớn nên em cứ đè con trỏ tại <b> rax </b> đúng 1 bytes để nó trỏ tới 1 vị trí chứa binary ngay trên chuỗi apple
+
+<img width="825" height="684" alt="image" src="https://github.com/user-attachments/assets/4723db18-c5e7-42c8-b81a-978bb5b68c6b" />
+
+Tới đây là đủ kết thúc challenge r, em chỉ cần chọn option 1 để leak binary r luân phiên đè thành các vùng chứa libc --> stack là em sẽ có hết
+
+Cuối cùng là spam sao cho đè đc comment ptr tại <b> 0x555555559360 </b> sao cho nó trỏ tới fake comment của em là em sẽ có thể arbitrary write, bước này em chọn arbitrary write tại rip để lấy shell là win
+
+<img width="1166" height="973" alt="image" src="https://github.com/user-attachments/assets/20a08d01-d460-407a-b7c9-70ac61a6c221" />
