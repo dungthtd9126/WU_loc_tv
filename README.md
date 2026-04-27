@@ -73,4 +73,6 @@ int __fastcall do_encode(__int64 ptr)
   return (*(__int64 (__fastcall **)(char *, size_t))(ptr + 32))(v2, len);// call shell
 }
 ```
-## 
+## Store
+- Bài này thì khá là khó ở chỗ code dài nên em bị đánh tâm lý khúc này. Challenge này có 1 bug chính, OOB write dẫn đến arbitrary read and write theo cách của em
+- 
