@@ -161,7 +161,7 @@ Lý do đương nhiên cũng là vì độ chính xác của IDX mà em đã con
 
 <img width="1317" height="997" alt="image" src="https://github.com/user-attachments/assets/3580121d-2887-4919-b534-1271cd593e4a" />
 
-Vùng vàng là nơi chứa len và ptr của feedback, hiện tại code của em đã overwrite len của feedback ở <b> 0x55555555c2a0 </b>
+Vùng hồng là nơi chứa len và ptr của feedback, hiện tại code của em đã overwrite len của feedback ở <b> 0x55555555c2a0 </b>
 
 Vùng xanh lá là vùng nhập feedback
 
