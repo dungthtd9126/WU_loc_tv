@@ -33,6 +33,7 @@ int __fastcall main(int argc, const char **argv, const char **envp)
 ...
 ```
 Bài này có bug khá rõ là oob ở do_set dẫn đến ghi đè function ptr. Em sẽ ghi đè exe.plt.system vào func_ptr_1 để có thể thực hiện system call
+
 Trước đó em sẽ set up chuỗi 'sh' bằng hàm do_set nhờ vào bug oob
 ```
 int __fastcall do_set(__int64 ptr)
