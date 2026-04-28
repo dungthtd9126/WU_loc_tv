@@ -206,7 +206,7 @@ load  = [
 packet = create_packet(0xdead, pack_data(load))
 
 sa(b'> ', packet)
-
+sa(b'> ', b'1')
 # 0x9da5
 p.interactive()
 
