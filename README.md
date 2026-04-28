@@ -184,3 +184,39 @@ Tới đây là đủ kết thúc challenge r, em chỉ cần chọn option 1 đ
 Cuối cùng là spam sao cho đè đc comment ptr tại <b> 0x555555559360 </b> sao cho nó trỏ tới fake comment của em là em sẽ có thể arbitrary write, bước này em chọn arbitrary write tại rip để lấy shell là win
 
 <img width="1166" height="973" alt="image" src="https://github.com/user-attachments/assets/20a08d01-d460-407a-b7c9-70ac61a6c221" />
+## t3mp
+Bài này thì hiện tại em đã ra shell bên local và docker r mà trên server ko ra nên wu của em có thể chỉ xài đc bên docker là cùng ạ
+
+Hướng đi của em tập trung exploit bug bof của chương trình, nhờ vào đó em có thể leak canary và libc ở rip của main. Đồng thời ghi đè rip để rop chain sau đó luôn
+
+Em sẽ tập trung exploit 3 case chính của main: 0x1337, 0x700 và 0xDEAD bên default
+
+Em sẽ phân tích case 0x1337 trước, và cũng là nơi mà em điều khiển đc các biến quan trọng gồm <b> admin_str, idx_3 và len_vul_0 </b>
+```
+case 0x800:
+        if ( packet->arr[0].chosen == 2 && packet->idx > 0 )// uaf 
+LABEL_33:
+          copy_safe(ptr_0, *(const void **)packet->arr[0].ptr, g_bin);
+        break;
+      case 0x1337:                              // muse be somehing here
+        if ( !packet->arr[0].chosen && packet->arr[1].chosen == 2 )// heap leak
+        {
+          len = strlen(*(const char **)packet->arr[1].ptr);
+          if ( len <= 0x3000 )
+          {
+            controlled_ptr = *(const void **)packet->arr[1].ptr;
+            copy_safe(admin_str, controlled_ptr, len);
+            idx_3 = len;
+            len_vul_0 = *(_QWORD *)packet->arr[0].len;
+            if ( len_vul_0 + (int)len <= 0x3000 )
+              size = len_vul_0;
+            else
+              print((unsigned int)"size is too large", (_DWORD)controlled_ptr, len_vul_0, v45, v46, v47);
+          }
+          else
+          {
+            print((unsigned int)"data too big \n", (unsigned int)buf, v40, v41, v42, v43);
+          }
+        }
+```
+
