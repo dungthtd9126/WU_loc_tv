@@ -316,5 +316,5 @@ print("admin: %s \n", admin_str);
 Em chỉ cần lặp lại việc này 2 lần là có canary và libc. Kế tiếp là ghi đè lần nữa, căn chỉnh canary hợp lệ và rop chain to shell là win
 
 ```
-Mà hiện tại em chỉ ra shell bên docker với local thôi có thể cần căn chỉnh lại
+Mà hiện tại em chỉ ra shell bên docker với local thôi nên có thể cần căn chỉnh lại
 ```
