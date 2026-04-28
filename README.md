@@ -191,6 +191,28 @@ Hướng đi của em tập trung exploit bug bof của chương trình, nhờ v
 
 Em sẽ tập trung exploit 3 case chính của main: 0x1337, 0x700 và 0xDEAD bên default
 
+Trước khi phân tích 3 case rồi cách em exploit thì dưới đây là 2 struct mà em define cho code của em
+```
+00000000 struct __fixed cl // sizeof=0xF8
+00000000 {
+00000000     int idx __strlit(C,"UTF-8");
+00000004     int pad;
+00000008     arr arr[10];
+000000F8 };
+
+FFFFFFFF // wrong or deleted type #10
+FFFFFFFF
+FFFFFFFF // wrong or deleted type #11
+FFFFFFFF
+00000000 struct __fixed arr // sizeof=0x18
+00000000 {                                       // XREF: cl/r
+00000000     int chosen;
+00000004     int pad2;
+00000008     char len[8] __strlit(C,"UTF-8");
+00000010     char ptr[8] __strlit(C,"UTF-8");
+00000018 };
+```
+
 Em sẽ phân tích case 0x1337 trước, và cũng là nơi mà em điều khiển đc các biến quan trọng gồm <b> admin_str, idx_3 và len_vul_0 </b>
 ```
 case 0x800:
@@ -219,4 +241,3 @@ LABEL_33:
           }
         }
 ```
-
