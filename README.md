@@ -215,13 +215,8 @@ FFFFFFFF
 
 Em sẽ phân tích case 0x1337 trước, và cũng là nơi mà em điều khiển đc các biến quan trọng gồm <b> admin_str, idx_3 và len_vul_0 </b>
 ```
-case 0x800:
-        if ( packet->arr[0].chosen == 2 && packet->idx > 0 )// uaf 
-LABEL_33:
-          copy_safe(ptr_0, *(const void **)packet->arr[0].ptr, g_bin);
-        break;
-      case 0x1337:                              // muse be somehing here
-        if ( !packet->arr[0].chosen && packet->arr[1].chosen == 2 )// heap leak
+      case 0x1337:                             
+        if ( !packet->arr[0].chosen && packet->arr[1].chosen == 2 )
         {
           len = strlen(*(const char **)packet->arr[1].ptr);
           if ( len <= 0x3000 )
@@ -241,3 +236,18 @@ LABEL_33:
           }
         }
 ```
+Ở đây thì có 2 biến quan trọng em cần điều khiển để gây bof chính là <b> idx_3 và size </b>, lý do là vì ở option "0xDEAD" sẽ sử dụng &admin_str[idx_3] như là dest_ptr nhờ vào hàm copy_safe và copy với lượng "size" byte từ vùng buf mà em nhập sau ở <b> option 2 unpack </b>
+```
+ if ( choice == 0xDEAD && packet->arr[0].chosen == 2 )
+        {
+          len_data = size;
+          if ( *(_QWORD *)packet->arr[0].len < size )
+          {
+            len_data = *(_QWORD *)packet->arr[0].len;
+            size -= len_data;
+          }                                     // idx_3 can be controlled by 
+                                                // strlen of my input len
+          copy_safe(&admin_str[idx_3], *(const void **)packet->arr[0].ptr, len_data);
+        }
+```
+Mà em có thể điều khiển size tùy ý ở option 0x1337 nếu ```
