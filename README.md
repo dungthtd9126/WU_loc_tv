@@ -33,7 +33,6 @@ int __fastcall main(int argc, const char **argv, const char **envp)
 ...
 ```
 Bài này có bug khá rõ là oob ở do_set dẫn đến ghi đè function ptr. Em sẽ ghi đè exe.plt.system vào func_ptr_1 để có thể thực hiện system call
-
 Trước đó em sẽ set up chuỗi 'sh' bằng hàm do_set nhờ vào bug oob
 ```
 int __fastcall do_set(__int64 ptr)
@@ -251,4 +250,71 @@ Em sẽ phân tích case 0x1337 trước, và cũng là nơi mà em điều khi�
           copy_safe(&admin_str[idx_3], *(const void **)packet->arr[0].ptr, len_data);
         }
 ```
-Mà em có thể điều khiển size tùy ý ở option 0x1337 nếu ```
+Mà em có thể điều khiển size tùy ý ở option 0x1337 nếu
+ ```
+len_vul_0 + (int)len <= 0x3000
+ ```
+ Em dễ dàng điều khiển đc cả len vì chương trình xài hàm <b> strlen </b> để check độ dài input
+
+ Thế thì em chỉ cần spam NULL byte cho đủ bên unpack là xong
+ ```
+ VD: packet->arr[1].len = 0x50
+ Vậy thì em spam b'\0'*0x50 là đủ độ dài len check ở hàm unpack
+ --> điều khiển đc len theo ý muốn của em
+ ```
+ Nhờ vào len = idx_3 điều khiển đc nên em có thể điều khiển nơi mà chương trình copy tới
+ ```
+ copy_safe(&admin_str[idx_3], *(const void **)packet->arr[0].ptr, len_data);
+ ```
+Nhìn vào code trên của option 0xDEAD thì len_data = size và em có thể điều khiển đc nó nhờ vào ``` vul_len_0 = packet->arr[0].len ``` ở option 0x1337 
+
+Bug nằm ở chỗ chương trình chỉ thực hiện ``` size = len_vul_0 ``` khi <b> len_vul_0 + (int)len <= 0x3000 </b>
+
+Dựa vào đặc điểm này, em set nó thành 1 cái size để ghi tiếp sau khi ghi 1 lượng lớn byte < 0x3000 trên <b> admin_str </b> vì option 0xDEAD cho phép em ghi tiếp từ nơi  mà em ngừng copy input
+- Cách em set up size:
+```
+load  = [
+{
+    'type': NUMBER,
+    'value': 0x100 # size
+},
+{
+    'type': BIN,
+    'data': b'\0' # data bên option 2
+}]
+```
+Vì em chỉ set up size thôi nên em sẽ bỏ qua phần data, em sẽ ko thể set up 2 cái cùng lúc nên em phải làm theo đúng tuần tự là  <b> set up size trước rồi mới tới IDX </b>
+
+- IDX set up:
+```
+load  = [
+{
+    'type': NUMBER,
+    'value': 0xfffff # size
+},
+{
+    'type': BIN,
+    'data': b'h'*(0x2fe0)
+
+}]
+```
+Nhờ vào việc em set size > 0x3000 nên nó sẽ auto ko set up lại cái size. Còn việc copy data từ buf sang stack thì program vẫn cứ thế mà làm
+
+Sau khi đã set up xong rồi thì em thực hiện nối chuỗi nhờ vào controlled size --> bof tới canary và rip ở 0xDEAD:
+```
+...
+copy_safe(&admin_str[idx_3], *(const void **)packet->arr[0].ptr, len_data);
+...
+```
+
+Vì ``` option 0x7000 ``` sử dụng '%s' để in chuỗi nên em chỉ cần căn chỉnh đề chương trình nối chuỗi với canary, rip_main mà leak cả 2
+```
+...
+print("admin: %s \n", admin_str);
+...
+```
+Em chỉ cần lặp lại việc này 2 lần là có canary và libc. Kế tiếp là ghi đè lần nữa, căn chỉnh canary hợp lệ và rop chain to shell là win
+
+```
+Mà hiện tại em chỉ ra shell bên docker với local thôi có thể cần căn chỉnh lại
+```
