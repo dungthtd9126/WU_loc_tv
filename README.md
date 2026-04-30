@@ -315,6 +315,24 @@ print("admin: %s \n", admin_str);
 ```
 Em chỉ cần lặp lại việc này 2 lần là có canary và libc. Kế tiếp là ghi đè lần nữa, căn chỉnh canary hợp lệ và rop chain to shell là win
 
+Mặc dù trên local với docker thì ra dễ vậy. Nhưng lúc lên remote thì em sẽ bị vướng 1 vài tính chất của việc truyền packet với size lớn qua đường truyền mạng với server. Qua những gì em tìm hiểu được thì khi gửi 1 luợng lớn bytes qua đường truyền mạng. Packet của em sẽ đc chia thành các mảnh vỡ nhỏ rồi gửi theo thứ tự các mảnh đó
+
+Vấn đề là chương trình chỉ nhận packet 1 lần, trong khi packet của em bị tính chất của đường truyền chia ra thành nhiều mảnh ghép. Điều đó khiến cho packet của em ko nhận được hết, chỉ nhận được 1 phần
+
+Để khắc phục điều này thì em cần phải áp dụng bug race condition, khiến cho chương trình trì hoãn 1 lúc để nhân lúc đó gửi payload của em. Lý do là vì các packet sau khi đc chia thành các mảnh nhỏ thì sẽ có cái nhanh hay chậm hơn, khiến nó ko thể nhận đc tất cả đồng thời
+
+Nếu trong thời gian em gửi packet mà chương trình bị delay thì các mảnh vỡ packet nhỏ sẽ có thời gian đi tới chương trình và ở trong hàng chờ, đợi hàm read nhận và xử lý. Lúc đó thì read sẽ đọc hết packet của em cùng 1 lúc. Khiến cho việc exploit thực thi được
+
+- Case mà em sử dụng:
 ```
-Mà hiện tại em chỉ ra shell bên docker với local thôi nên có thể cần căn chỉnh lại
+case 0x100:
+        logcat("what's your plan ? \n", (__int64)buf, v11, v12, v13, v14);
+        logcat("Is that a shell ? \n", (__int64)buf, v15, v16, v17, v18);
+        logcat("It's not here ! \n", (__int64)buf, v19, v20, v21, v22);
+        sleep(1u);
+        break;
+...
 ```
+Vì chương trình sử dụng sleep 1s nên em sẽ gửi ngay lập tức payload chính của em ngay sau đó bằng send, trong khi chương trình đang nghỉ. Sau khi sleep xong thì nó sẽ xử lý các packet đã gửi tới bằng read và thực thi bof như ý muốn của em
+<img width="1357" height="838" alt="image" src="https://github.com/user-attachments/assets/f7fac3c9-03da-46b3-aa48-8b4b1b89037b" />
+
