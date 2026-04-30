@@ -184,6 +184,7 @@ Tới đây là đủ kết thúc challenge r, em chỉ cần chọn option 1 đ
 Cuối cùng là spam sao cho đè đc comment ptr tại <b> 0x555555559360 </b> sao cho nó trỏ tới fake comment của em là em sẽ có thể arbitrary write, bước này em chọn arbitrary write tại rip để lấy shell là win
 
 <img width="1166" height="973" alt="image" src="https://github.com/user-attachments/assets/20a08d01-d460-407a-b7c9-70ac61a6c221" />
+
 ## t3mp
 
 Bài này thì hiện tại em đã ra shell bên local và docker r mà trên server ko ra nên wu của em có thể chỉ xài đc bên docker là cùng ạ
