@@ -185,6 +185,7 @@ Cuối cùng là spam sao cho đè đc comment ptr tại <b> 0x555555559360 </b>
 
 <img width="1166" height="973" alt="image" src="https://github.com/user-attachments/assets/20a08d01-d460-407a-b7c9-70ac61a6c221" />
 ## t3mp
+
 Bài này thì hiện tại em đã ra shell bên local và docker r mà trên server ko ra nên wu của em có thể chỉ xài đc bên docker là cùng ạ
 
 Hướng đi của em tập trung exploit bug bof của chương trình, nhờ vào đó em có thể leak canary và libc ở rip của main. Đồng thời ghi đè rip để rop chain sau đó luôn
