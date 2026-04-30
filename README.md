@@ -187,7 +187,7 @@ Cuối cùng là spam sao cho đè đc comment ptr tại <b> 0x555555559360 </b>
 
 ## t3mp
 
-Hướng đi của em tập trung exploit bug bof của chương trình, nhờ vào đó em có thể leak canary và libc ở rip của main. Đồng thời ghi đè rip để rop chain sau đó luôn. Lúc lên server thì sẽ kết hợp race condition để gửi packet với size lớn
+Hướng đi của em tập trung exploit bug bof của chương trình, nhờ vào đó em có thể leak canary và libc ở rip của main. Đồng thời ghi đè rip để rop chain sau đó luôn. Lúc lên server thì em sẽ kết hợp race condition để gửi packet với size lớn
 
 Em sẽ tập trung exploit 3 case chính của main: 0x1337, 0x700 và 0xDEAD bên default
 
