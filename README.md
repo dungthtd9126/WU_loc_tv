@@ -335,6 +335,5 @@ case 0x100:
 ```
 Vì chương trình sử dụng sleep 1s nên em sẽ gửi ngay lập tức payload chính của em ngay sau đó bằng send, trong khi chương trình đang nghỉ. Sau khi sleep xong thì nó sẽ xử lý các packet đã gửi tới bằng read và thực thi bof như ý muốn của em
 <img width="1357" height="838" alt="image" src="https://github.com/user-attachments/assets/f7fac3c9-03da-46b3-aa48-8b4b1b89037b" />
-## Token_manager
-HIện tại thì em giải chưa ra nhưng mà em sẽ viết tiến độ hiện tại của em ở bài này
 
+## Token_manager
