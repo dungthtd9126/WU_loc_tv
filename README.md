@@ -416,4 +416,8 @@ Bug nằm ở chỗ khi check idx đáng lẽ phải là ```index >= current_cou
 
 Mỗi khi em free 1 chunk ở idx bất kì hợp lệ thì chương trình sẽ dịch các ptr sang bên trái. Quy luật là nó copy các ptr từ phải sang trái, bắt đầu từ max_idx cho tới chỗ idx vừa mới bị xóa. Còn insert thì ngược lại, bắt đầu từ chỗ insert cho tới max_idx là dừng
 
-Nhờ vào quy luật đó kết hợp với oob 1 idx, em sẽ thu
+Nhờ vào quy luật đó kết hợp với oob 1 idx, em sẽ làm theo thao tác free chunk 0 cỡ 2 lần để nó xuất hiện 3 con trỏ giống nhau ở cuối
+
+<img width="1152" height="712" alt="image" src="https://github.com/user-attachments/assets/d74ad3de-be95-44ff-9f75-13073976a795" />
+
+Tiếp theo em insert vô idx_max, chỗ mà bị oob để ```vector->current``` tăng lên
