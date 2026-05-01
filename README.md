@@ -438,6 +438,8 @@ Lúc này thì em chỉ cần set up rop chain của em trên bss nhờ vào 1 s
 ```
 Safe_Input(Global_Buffer, sizeof(Global_Buffer))
 ```
-mà ko xóa đi data sau khi em nhập vào. Bây giờ thì em chỉ cần pivot qua vùng này thì em sẽ lấy shell thoáng hơn vì giới hạn input to lên rất nhiều lần r
+mà ko xóa đi data sau khi em nhập vào. Bây giờ thì em chỉ cần pivot qua vùng này thì em sẽ lấy shell thoáng hơn vì giới hạn input to lên rất nhiều lần r. 
+
+Bây giờ thì em lụm flag trên server lun
 
 <img width="1255" height="740" alt="image" src="https://github.com/user-attachments/assets/1244b64c-d042-4fbb-9e62-50b4e2fc8d49" />
