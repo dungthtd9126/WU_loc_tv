@@ -337,3 +337,79 @@ Vì chương trình sử dụng sleep 1s nên em sẽ gửi ngay lập tức pay
 <img width="1357" height="838" alt="image" src="https://github.com/user-attachments/assets/f7fac3c9-03da-46b3-aa48-8b4b1b89037b" />
 
 ## Token_manager
+
+Bài này có 1 bug chính là oob dẫn đến uaf free và tcache poisoning
+
+Đầu tiên thì em cần leak binary và heap base rồi mới tcache poisoning được
+
+Để leak được binary thì em sẽ lợi dụng hàm Token_Import_Handler ở option 7 để thành công leak đc Global_Security_Token
+
+Trước đó, program sẽ chuyển hóa input của em thành dạng hex byte hợp lệ
+```
+for (int i = 0; i < 0x20; i++) {
+    sscanf(NameHex + (i * 2), "%2hhx", &Encrypted_Token.Name[i]);
+    sscanf(PasswordHex + (i * 2), "%2hhx", &Encrypted_Token.Password[i]);
+  }
+```
+Destination của quá trình này sẽ là ```Encrypted_Token.Name.Name``` và ```Encrypted_Token.Password```
+
+Sau đó, chương trình sử dụng struct này để thực hiện vài phép xor với Global_Security_Token.
+
+Nhưng vì em muốn giữ nguyên Global_Security_Token để leak nên em sẽ nhập các input ko hợp lệ so với dạng hex, ví dụ như ```p8(0x1)``` hoặc ```b'k'```
+Vì nó chỉ chuyển hóa ký tự string với dạng hex hợp lệ như ```a, b, c, d``` nên khi gặp các ký tự này, nó sẽ ko nhận hay đưa sang destination. VÌ nó ko nhận ký tự nào nên mặc định destination sẽ là null do trc đó program thực thi 
+```
+memset(&Encrypted_Token, 0, sizeof(Token));
+```
+Do đó, khi nó thực thi ```Token_Decrypt_Handler```, nó sẽ xor với null. Thành ra ko hề bị thay đổi chút nào
+
+```
+void Token_Decrypt_Handler(Token *Encrypted_Token, Token *Dst_Token) 
+// can leak Global_Security_Token
+{
+  memset(Dst_Token, 0, sizeof(Token));
+  uint64_t* Enc_Name_Block = (uint64_t*)Encrypted_Token->Name;
+  uint64_t* Enc_Pass_Block = (uint64_t*)Encrypted_Token->Password;
+  uint64_t* Dec_Name_Block = (uint64_t*)Dst_Token->Name;
+  uint64_t* Dec_Pass_Block = (uint64_t*)Dst_Token->Password;
+
+  Dst_Token->Public_Token = Encrypted_Token->Public_Token ^ Global_Security_Token;
+  for (size_t i = 0; i < 4; i++) {
+    Dec_Name_Block[i] = Enc_Name_Block[i] 
+    ^ Dst_Token->Public_Token;
+    Dec_Pass_Block[i] = Enc_Pass_Block[i] 
+    ^ Dst_Token->Private_Token;
+  }
+}
+```
+Các kết quả xor sẽ đc gán vào pass và name block. Vì lúc nãy chương trình ko hề chuyển hóa j hết nên mặc định block name và pass sẽ null --> giữ nguyên các token
+
+Lúc này thì chỉ cần thực thi ```Token_Display_Handler``` thì em sẽ leak đc Global_Security_Token lẫn private_token 
+
+Tiếp theo, em sẽ thành công leak đc binary nhờ vào việc đảo ngược phép toán ở dưới vì em đã có ```private lẫn global token```
+```
+uint64_t Security_Private_Token_Gen(PToken Token) {
+  return ((uintptr_t)&Global_Security_Token) ^ ((uintptr_t)Global_Security_Token >> 12); // For Checking Security Token
+}
+```
+
+Tiếp theo là leak heap, phần khó đầu tiên của challenge
+
+Khúc này em spam create để program liên tục reinit lại chunk, free đi chunk cũ. Tới 1 mức độ nào đó, chunk chứa các ptr quá lớn khi bị free sẽ đi thẳng vào unsorted bin. Đó là lúc em có thể leak đc heap.
+
+Lúc này, khi create chunk mới thì program sẽ trích xuất chunk từ unsorted bins, nơi từng chứa các heap addr của list address, để cho em nhập name và password
+
+Và dữ liệu của chunk cũ đương nhiên ko bị set null. Điều này tạo điều kiện cho em nhập name hoặc password cỡ 8 byte là đủ leak heap r.
+
+Sau khi đã có heap và binary leak, em sẽ tận dụng lỗi oob của 2 hàm là insert và delete
+
+Cả 2 đều ko có hàm ```vector_get```(hàm check idx từ user kĩ càng) mà lại sử dụng chung cơ chế check idx khác
+```
+size_t current_count =
+      (vector->current - vector->vector_head) / sizeof(void *);
+  if (index > current_count)
+```
+Bug nằm ở chỗ khi check idx đáng lẽ phải là ```index >= current_count```, vì mất đi điều kiện ```=``` nên chương trình cho phép em oob đúng 1 idx ở nay cuối list
+
+Ở đây, em tận dụng cơ chế sort của hàm remove và insert để trigger uaf
+
+<img width="1209" height="849" alt="image" src="https://github.com/user-attachments/assets/c5f448a2-5462-497c-a762-f41f44490444" />
