@@ -429,3 +429,15 @@ Em cứ thế mà leak libc--> stack rồi overwrite saved rip của hàm safe_i
 Lưu ý là lúc leak libc thì em sẽ allocate ngay vùng chứa các stdin, stderr, stdout để leak libc tại đó
 
 <img width="1330" height="490" alt="image" src="https://github.com/user-attachments/assets/96eb81de-58cc-4b8d-a16f-ea4581c1ecc7" />
+
+Vấn đề ở đây là dù có tính toán thế nào thì cx thg password sẽ phải ghi đè lên stdin là hợp lý nhất
+
+Lý do là vì program chỉ sử dụng ```read``` để nhận input và nó là syscall của kernel chứ ko phải là hàm sử dụng IO_Struct như mấy hàm khác. Nên cho dù em có ghi đè 1 chút lên đây thì cx ko thành vấn đề. Sau khi leak xong thì em sẽ chỉnh sửa lại để khi gọi shell ko bị lỗi
+
+Lúc này thì em chỉ cần set up rop chain của em trên bss nhờ vào 1 số hàm sử dụng
+```
+Safe_Input(Global_Buffer, sizeof(Global_Buffer))
+```
+mà ko xóa đi data sau khi em nhập vào. Bây giờ thì em chỉ cần pivot qua vùng này thì em sẽ lấy shell thoáng hơn vì giới hạn input to lên rất nhiều lần r
+
+<img width="1255" height="740" alt="image" src="https://github.com/user-attachments/assets/1244b64c-d042-4fbb-9e62-50b4e2fc8d49" />
