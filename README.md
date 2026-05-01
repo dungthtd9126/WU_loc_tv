@@ -428,3 +428,4 @@ Em cứ thế mà leak libc--> stack rồi overwrite saved rip của hàm safe_i
 
 Lưu ý là lúc leak libc thì em sẽ allocate ngay vùng chứa các stdin, stderr, stdout để leak libc tại đó
 
+<img width="1330" height="490" alt="image" src="https://github.com/user-attachments/assets/96eb81de-58cc-4b8d-a16f-ea4581c1ecc7" />
