@@ -413,3 +413,7 @@ Bug nằm ở chỗ khi check idx đáng lẽ phải là ```index >= current_cou
 Ở đây, em tận dụng cơ chế sort của hàm remove và insert để trigger uaf
 
 <img width="1209" height="849" alt="image" src="https://github.com/user-attachments/assets/c5f448a2-5462-497c-a762-f41f44490444" />
+
+Mỗi khi em free 1 chunk ở idx bất kì hợp lệ thì chương trình sẽ dịch các ptr sang bên trái. Quy luật là nó copy các ptr từ phải sang trái, bắt đầu từ max_idx cho tới chỗ idx vừa mới bị xóa. Còn insert thì ngược lại, bắt đầu từ chỗ insert cho tới max_idx là dừng
+
+Nhờ vào quy luật đó kết hợp với oob 1 idx, em sẽ thu
