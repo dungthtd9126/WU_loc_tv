@@ -420,4 +420,11 @@ Nhờ vào quy luật đó kết hợp với oob 1 idx, em sẽ làm theo thao t
 
 <img width="1152" height="712" alt="image" src="https://github.com/user-attachments/assets/d74ad3de-be95-44ff-9f75-13073976a795" />
 
-Tiếp theo em insert vô idx_max, chỗ mà bị oob để ```vector->current``` tăng lên
+Tiếp theo em insert vô idx_max, chỗ mà bị oob để ```vector->current``` tăng lên, khiến cho em có thể tiếp cận được với ptr ```0x000055555555fae0``` thứ 2, vì chỗ insert bị thay thế bởi ptr khác nên hiện chỉ còn 2 ptr
+
+Hiện tại thì em đã có thể trigger uaf bởi vì 2 ptr cách tận 1 idx hợp lệ. Bây giờ em chỉ cần free cái cuối dựa vào oob lần nữa r sử dụng uaf để trigger tcache poison là em đã có thể allocate vô bất cứ nơi nào. 
+
+Em cứ thế mà leak libc--> stack rồi overwrite saved rip của hàm safe_input để thực thi stack pivot lên vùng global_buffer cho có nhiều ko gian là win
+
+Lưu ý là lúc leak libc thì em sẽ allocate ngay vùng chứa các stdin, stderr, stdout để leak libc tại đó
+
